@@ -122,11 +122,11 @@ Enter the applicant's financial and personal details below to run the assessment
 
 developer_info = """
 ### About the Developer
-**Created by:** Chandan Saroj
+**Created by:** Sudhanshu Panwar''''''''''''
 
-* **LinkedIn:** [Connect with me](YOUR_LINKEDIN_URL_HERE)
-* **GitHub:** [Check out my projects](YOUR_GITHUB_URL_HERE)
-* **Instagram:** [Follow me](YOUR_INSTAGRAM_URL_HERE)
+* **LinkedIn:** [Connect with me]()
+* **GitHub:** [Check out my projects](https://github.com/SudhanshuPanwar01)
+* **Instagram:** [Follow me](Sudhanshu Panwar)
 
 ---
 ### 🛠️ Tools & Technologies Used
@@ -141,7 +141,50 @@ developer_info = """
 # Interface Setup
 # ==========================================================
 # --- CODE BLOCK: GRADIO COMPONENTS MAPPED TO FEATURES ---
+custom_css = """
+body{
+    background: linear-gradient(135deg,#0f172a,#1e3a8a,#2563eb);
+}
+
+.gradio-container{
+    max-width:1100px !important;
+    margin:auto;
+}
+
+h1{
+    text-align:center;
+}
+
+footer{
+    visibility:hidden;
+}
+
+/* Glass Card */
+.block{
+    border-radius:20px !important;
+    background:rgba(255,255,255,0.08) !important;
+    backdrop-filter:blur(12px);
+    box-shadow:0 8px 30px rgba(0,0,0,.3);
+}
+
+/* Buttons */
+button{
+    transition:.3s;
+}
+
+button:hover{
+    transform:scale(1.05);
+}
+
+/* Input Hover */
+input:hover,
+textarea:hover{
+    border:2px solid #3b82f6 !important;
+}
+"""
 interface = gr.Interface(
+    
+    css=custom_css
     fn=predict_loan_status,
     inputs=[
         gr.Number(label="Number of Dependents"),
