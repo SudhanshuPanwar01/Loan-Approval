@@ -1,7 +1,6 @@
 # app.py
 
 import os
-import gradio as gr
 import joblib
 import gradio as gr
 
@@ -37,16 +36,10 @@ def predict_loan_status(
         commercial_assets_value, luxury_assets_value, bank_asset_value
     ]
 
-# Load the trained Decision Tree model at startup
-deployed_dt = joblib.load('diabetes_prediction_model.pkl')
     # 1. Empty input check
     if any(v is None or str(v).strip() == "" for v in values):
         return "❌ Please fill in all the input fields."
 
-def predict_diabetes(pregnancies, glucose, insulin, bmi, age):
-    # The model expects a 2D array matching the exact order of x_train
-    input_data = [[pregnancies, glucose, insulin, bmi, age]]
-    prediction = deployed_dt.predict(input_data)
     # 2. Type casting
     try:
         no_of_dependents = int(no_of_dependents)
@@ -70,12 +63,7 @@ def predict_diabetes(pregnancies, glucose, insulin, bmi, age):
     # 4. Specific Range Validations
     if not (300 <= cibil_score <= 900):
         return "❌ CIBIL score must be between 300 and 900."
-
-    # Interpret the binary outcome
-    if prediction[0] == 1:
-        return "Prediction: High Risk of Diabetes (Positive)"
-    else:
-        return "Prediction: Low Risk of Diabetes (Negative)"
+    
     if no_of_dependents > 20:
         return "❌ Number of dependents seems unusually high (Max 20)."
     # ----------------------------------------------
@@ -132,15 +120,16 @@ This application predicts whether an applicant's loan will be **Approved** or **
 Enter the applicant's financial and personal details below to run the assessment.
 """
 
-# --- CODE BLOCK: ADDED FOOTER INFO AND ARTICLE PARAMETER ---
 developer_info = """
 ### About the Developer
 **Created by:** Chandan Saroj
-@@ -29,27 +130,44 @@ def predict_diabetes(pregnancies, glucose, insulin, bmi, age):
+
+* **LinkedIn:** [Connect with me](YOUR_LINKEDIN_URL_HERE)
+* **GitHub:** [Check out my projects](YOUR_GITHUB_URL_HERE)
+* **Instagram:** [Follow me](YOUR_INSTAGRAM_URL_HERE)
 
 ---
 ### 🛠️ Tools & Technologies Used
-* **Machine Learning:** Scikit-learn (Decision Tree Classifier)
 * **Machine Learning:** Scikit-learn (Random Forest Classifier)
 * **Web Framework:** Gradio
 * **Language:** Python
@@ -153,14 +142,8 @@ developer_info = """
 # ==========================================================
 # --- CODE BLOCK: GRADIO COMPONENTS MAPPED TO FEATURES ---
 interface = gr.Interface(
-    fn=predict_diabetes,
     fn=predict_loan_status,
     inputs=[
-        gr.Number(label="Pregnancies (Number of times pregnant)"),
-        gr.Number(label="Glucose (Plasma glucose concentration)"),
-        gr.Number(label="Insulin (2-Hour serum insulin)"),
-        gr.Number(label="BMI (Body mass index)"),
-        gr.Number(label="Age (Years)")
         gr.Number(label="Number of Dependents"),
         gr.Dropdown(choices=[("Graduate", 1), ("Not Graduate", 0)], label="Education Status"),
         gr.Dropdown(choices=[("Yes", 1), ("No", 0)], label="Self Employed?"),
@@ -173,22 +156,17 @@ interface = gr.Interface(
         gr.Number(label="Luxury Assets Value"),
         gr.Number(label="Bank Asset Value"),
     ],
-    outputs=gr.Text(label="Assessment Result"),
-    title="Diabetes Prediction System",
-    description="Enter the medical metrics to predict diabetes risk using a Decision Tree Machine Learning model.",
     outputs=gr.Textbox(label="Assessment Result", lines=6),
     title="🏦 Loan Approval Prediction System",
     description=DESCRIPTION,
     article=developer_info
 )
-# -----------------------------------------------------------
 # --------------------------------------------------------
 
 # ==========================================================
 # Launch
 # ==========================================================
 if __name__ == "__main__":
-    interface.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))
     interface.launch(
         server_name="0.0.0.0",
         server_port=int(os.environ.get("PORT", 7860)),
