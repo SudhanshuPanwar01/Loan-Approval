@@ -184,7 +184,6 @@ textarea:hover{
 """
 interface = gr.Interface(
     
-    css=custom_css
     fn=predict_loan_status,
     inputs=[
         gr.Number(label="Number of Dependents"),
