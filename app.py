@@ -124,9 +124,9 @@ developer_info = """
 ### About the Developer
 **Created by:** Sudhanshu Panwar''''''''''''
 
-* **LinkedIn:** [Connect with me]()
-* **GitHub:** [Check out my projects](https://github.com/SudhanshuPanwar01)
-* **Instagram:** [Follow me](Sudhanshu Panwar)
+* **LinkedIn:** [Connect with me](    )
+* **GitHub:** (https://github.com/SudhanshuPanwar01)
+* **Instagram:** (Sudhanshu Panwar)
 
 ---
 ### 🛠️ Tools & Technologies Used
