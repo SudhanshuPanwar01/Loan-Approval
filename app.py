@@ -4,6 +4,7 @@ import os
 import joblib
 import gradio as gr
 
+
 # ==========================================================
 # Load the trained model
 # ==========================================================
@@ -13,8 +14,10 @@ except Exception as e:
     print(f"Warning: Model not found or error loading. {e}")
     deployed_rf = None
 
+
+
 # ==========================================================
-# Prediction Function with Error Handling
+# Prediction Function
 # ==========================================================
 def predict_loan_status(
     no_of_dependents,
@@ -29,51 +32,84 @@ def predict_loan_status(
     luxury_assets_value,
     bank_asset_value,
 ):
-    # --- CODE BLOCK: INPUT CAPTURE & VALIDATION ---
+
+    # Input validation
     values = [
-        no_of_dependents, education, self_employed, income_annum, 
-        loan_amount, loan_term, cibil_score, residential_assets_value, 
-        commercial_assets_value, luxury_assets_value, bank_asset_value
+        no_of_dependents,
+        education,
+        self_employed,
+        income_annum,
+        loan_amount,
+        loan_term,
+        cibil_score,
+        residential_assets_value,
+        commercial_assets_value,
+        luxury_assets_value,
+        bank_asset_value
     ]
 
-    # 1. Empty input check
-    if any(v is None or str(v).strip() == "" for v in values):
-        return "❌ Please fill in all the input fields."
 
-    # 2. Type casting
+    # Empty field check
+    if any(v is None or str(v).strip() == "" for v in values):
+        return "❌ Please fill all input fields."
+
+
+    # Type conversion
     try:
         no_of_dependents = int(no_of_dependents)
-        education = int(education) # From Dropdown
-        self_employed = int(self_employed) # From Dropdown
+        education = int(education)
+        self_employed = int(self_employed)
+
         income_annum = float(income_annum)
         loan_amount = float(loan_amount)
+
         loan_term = int(loan_term)
         cibil_score = int(cibil_score)
+
         residential_assets_value = float(residential_assets_value)
         commercial_assets_value = float(commercial_assets_value)
         luxury_assets_value = float(luxury_assets_value)
         bank_asset_value = float(bank_asset_value)
+
     except (ValueError, TypeError):
         return "❌ Please enter valid numeric values."
 
-    # 3. Negative value check
-    if any(v < 0 for v in values):
-        return "❌ Negative values are not allowed for financial metrics."
 
-    # 4. Specific Range Validations
-    if not (300 <= cibil_score <= 900):
+    # Negative value validation
+    numeric_values = [
+        no_of_dependents,
+        income_annum,
+        loan_amount,
+        loan_term,
+        cibil_score,
+        residential_assets_value,
+        commercial_assets_value,
+        luxury_assets_value,
+        bank_asset_value
+    ]
+
+    if any(v < 0 for v in numeric_values):
+        return "❌ Negative values are not allowed."
+
+
+    # CIBIL validation
+    if not 300 <= cibil_score <= 900:
         return "❌ CIBIL score must be between 300 and 900."
-    
+
+
+    # Dependents validation
     if no_of_dependents > 20:
-        return "❌ Number of dependents seems unusually high (Max 20)."
-    # ----------------------------------------------
+        return "❌ Number of dependents cannot exceed 20."
 
-    # --- CODE BLOCK: MODEL EXECUTION ---
+
+    # Model availability check
     if deployed_rf is None:
-        return "❌ Model failed to load. Please check your .pkl file."
+        return "❌ Model loading failed. Check your .pkl file."
 
+
+    # Model prediction
     try:
-        # Array strictly ordered to match the X dataframe provided
+
         input_data = [[
             no_of_dependents,
             education,
@@ -88,191 +124,348 @@ def predict_loan_status(
             bank_asset_value
         ]]
 
+
         prediction = deployed_rf.predict(input_data)
 
-        # Assuming 1 = Approved, 0 = Rejected based on standard loan datasets
+        confidence = None
+
+        if hasattr(deployed_rf, "predict_proba"):
+            probability = deployed_rf.predict_proba(input_data)
+            confidence = max(probability[0]) * 100
+
+
         if prediction[0] == 1:
-            return (
-                "🟢 Prediction Result\n\n"
-                "Loan Status: APPROVED\n\n"
-                "The applicant meets the criteria for this loan."
-            )
+
+            result = """
+🟢 LOAN APPROVED
+
+The applicant meets the required criteria.
+"""
+
         else:
-            return (
-                "🔴 Prediction Result\n\n"
-                "Loan Status: REJECTED\n\n"
-                "The applicant does not meet the criteria."
-            )
+
+            result = """
+🔴 LOAN REJECTED
+
+The applicant does not meet the approval criteria.
+"""
+
+
+        if confidence:
+            result += f"\n\n📊 Confidence Score: {confidence:.2f}%"
+
+
+        return result
+
 
     except Exception as e:
         return f"❌ Prediction failed.\n\nError: {str(e)}"
-    # -----------------------------------
+# ==========================================================
+# Application Description
+# ==========================================================
 
-# ==========================================================
-# Description & Footer
-# ==========================================================
-# --- CODE BLOCK: UI TEXT CONFIGURATION ---
 DESCRIPTION = """
 # 🏦 AI Loan Approval Prediction System
 
-✨ Welcome to the Loan Approval Prediction System.
+Welcome to the AI-powered Loan Approval Prediction System.
 
-This application uses a **Random Forest Machine Learning Model** to predict whether a loan application is likely to be **Approved** or **Rejected**.
+This application uses a trained **Random Forest Machine Learning Model**
+to analyze applicant details and predict whether a loan application is:
 
-### Enter the applicant's details below:
+🟢 Approved
 
-✔ Personal Information
+or
 
-✔ Financial Details
+🔴 Rejected
 
-✔ Asset Information
 
-✔ CIBIL Score
+### Features:
 
-Click **Submit** to generate the prediction.
+✔ Personal Information Analysis  
+✔ Financial Profile Evaluation  
+✔ Asset Value Assessment  
+✔ CIBIL Score Checking  
+✔ Machine Learning Based Prediction  
+
+
+Enter the applicant details and click **Submit** to generate the prediction.
 """
+
+
+# ==========================================================
+# Developer Information
+# ==========================================================
 
 developer_info = """
-### About the Developer
+
+## 👨‍💻 About Developer
+
 **Created by:** Sudhanshu Panwar
 
-* **LinkedIn:** [Connect with me](YOUR_LINKEDIN_URL_HERE)
-* **GitHub:** [https://github.com/SudhanshuPanwar01]
-* **Instagram:** [https://www.instagram.com/_rockstar._.__?igsh=MWRydTlnNGJtMG0zcg==]
+
+🔗 **GitHub:**  
+https://github.com/SudhanshuPanwar01
+
+
+📷 **Instagram:**  
+https://www.instagram.com/_rockstar._.__
+
 
 ---
-### 🛠️ Tools & Technologies Used
-* **Machine Learning:** Scikit-learn (Random Forest Classifier)
-* **Web Framework:** Gradio
-* **Language:** Python
-* **Deployment:** Render
+
+## 🛠️ Technology Stack
+
+
+🐍 Python
+
+🤖 Scikit-Learn
+
+🌲 Random Forest Classifier
+
+📊 Pandas
+
+🎨 Gradio
+
+📦 Joblib
+
+
+---
+
+⭐ AI Loan Approval Prediction System
 """
-# -----------------------------------------
+
 
 # ==========================================================
-# Interface Setup
+# Custom CSS Styling
 # ==========================================================
-# --- CODE BLOCK: GRADIO COMPONENTS MAPPED TO FEATURES ---
+
 css = """
-body{
-    background: linear-gradient(135deg,#0f172a,#1e293b,#0f766e);
+
+body {
+
+    background:
+    linear-gradient(
+        135deg,
+        #0f172a,
+        #1e3a8a,
+        #0891b2
+    );
+
 }
 
-.gradio-container{
-    max-width:1150px !important;
+
+.gradio-container {
+
+    max-width:1200px !important;
+
     margin:auto;
-    border-radius:20px;
-    background:rgba(255,255,255,0.05);
-    backdrop-filter:blur(12px);
-    padding:20px;
+
+    padding:25px;
+
+    border-radius:25px;
+
+    background:
+    rgba(255,255,255,0.08);
+
+    backdrop-filter:
+    blur(15px);
+
+    border:
+    1px solid rgba(255,255,255,0.2);
+
+    box-shadow:
+    0px 20px 50px rgba(0,0,0,0.35);
+
 }
 
-h1{
+
+
+h1 {
+
     text-align:center;
-    color:#00E5FF;
-    font-size:38px !important;
-    font-weight:bold !important;
+
+    color:#38bdf8 !important;
+
+    font-size:42px !important;
+
+    font-weight:800 !important;
+
 }
 
-h2,h3,h4{
-    color:white;
-}
 
-label{
-    font-weight:bold !important;
-}
 
-button{
-    background:linear-gradient(90deg,#2563eb,#06b6d4) !important;
+h2,h3,h4 {
+
     color:white !important;
-    border:none !important;
-    border-radius:12px !important;
-    font-size:18px !important;
+
+}
+
+
+
+p {
+
+    color:#e2e8f0 !important;
+
+    font-size:16px;
+
+}
+
+
+
+label {
+
+    color:white !important;
+
     font-weight:bold !important;
-    transition:0.3s;
+
 }
 
-button:hover{
-    transform:scale(1.04);
-}
 
-textarea{
+
+input,
+textarea,
+select {
+
     border-radius:12px !important;
+
+}
+
+
+
+button {
+
+    background:
+
+    linear-gradient(
+        90deg,
+        #2563eb,
+        #06b6d4
+    ) !important;
+
+
+    color:white !important;
+
+    border:none !important;
+
+    border-radius:15px !important;
+
+    font-size:18px !important;
+
+    font-weight:bold !important;
+
+    transition:0.3s ease;
+
+}
+
+button:hover {
+    transform:
+    translateY(-3px);
+    box-shadow:
+    0px 10px 25px rgba(6,182,212,0.5);
+}
+
+textarea {
     font-size:17px !important;
-    background:#f8fafc !important;
+    background:white !important;
 }
 
-input{
-    border-radius:10px !important;
+footer {
+    display:none !important;
 }
 
-footer{
-    visibility:hidden;
-}
 """
 
-# ==========================================
-# Custom Theme
-# ==========================================
+
+# ==========================================================
+# Gradio Theme
+# ==========================================================
+
 theme = gr.themes.Soft(
     primary_hue="blue",
     secondary_hue="cyan",
-    neutral_hue="slate",
+    neutral_hue="slate"
+
 )
-# ==========================================
-# Interface
-# ==========================================
+# ==========================================================
+# Gradio Interface
+# ==========================================================
+
 interface = gr.Interface(
     fn=predict_loan_status,
-
     inputs=[
-        ...
+
+        gr.Number(
+            label="👥 Number of Dependents"
+        ),
+        gr.Dropdown(
+            choices=[
+                ("Graduate", 1),
+                ("Not Graduate", 0)
+            ],
+            label="🎓 Education Status"
+        ),
+        gr.Dropdown(
+            choices=[
+                ("Yes", 1),
+                ("No", 0)
+            ],
+            label="💼 Self Employed?"
+        ),
+        gr.Number(
+            label="💰 Annual Income"
+        ),
+        gr.Number(
+            label="🏦 Loan Amount Requested"
+        ),
+        gr.Number(
+            label="📅 Loan Term"
+        ),
+        gr.Number(
+            label="📊 CIBIL Score (300-900)"
+        ),
+        gr.Number(
+            label="🏠 Residential Assets Value"
+        ),
+        gr.Number(
+            label="🏢 Commercial Assets Value"
+        ),
+        gr.Number(
+            label="💎 Luxury Assets Value"
+        ),
+        gr.Number(
+            label="🏛️ Bank Asset Value"
+        )
+
     ],
+
+
 
     outputs=gr.Textbox(
-        label="Assessment Result",
-        lines=6
+        label="📋 Loan Assessment Result",
+        lines=8
+
     ),
 
-    title="🏦 Loan Approval Prediction System",
-
+    title="🏦 AI Loan Approval Prediction System",
     description=DESCRIPTION,
-
     article=developer_info,
+    theme=theme,
+    css=css
 
-    theme=theme,     # ← Add this here
-
-    css=css,         # ← And this here
-
-    allow_flagging="never"
 )
-interface = gr.Interface(
-    fn=predict_loan_status,
-    inputs=[
-        gr.Number(label="Number of Dependents"),
-        gr.Dropdown(choices=[("Graduate", 1), ("Not Graduate", 0)], label="Education Status"),
-        gr.Dropdown(choices=[("Yes", 1), ("No", 0)], label="Self Employed?"),
-        gr.Number(label="Annual Income (₹/$)"),
-        gr.Number(label="Loan Amount Requested"),
-        gr.Number(label="Loan Term (Months/Years)"),
-        gr.Number(label="CIBIL Score (300 - 900)"),
-        gr.Number(label="Residential Assets Value"),
-        gr.Number(label="Commercial Assets Value"),
-        gr.Number(label="Luxury Assets Value"),
-        gr.Number(label="Bank Asset Value"),
-    ],
-    outputs=gr.Textbox(label="Assessment Result", lines=6),
-    title="🏦 Loan Approval Prediction System",
-    description=DESCRIPTION,
-    article=developer_info
-)
-# --------------------------------------------------------
+# ==========================================================
+# Launch Application
+# ==========================================================
 
-# ==========================================================
-# Launch
-# ==========================================================
 if __name__ == "__main__":
+
     interface.launch(
-        server_name="0.0.0.0",
-        server_port=int(os.environ.get("PORT", 7860)),
+        server_name="0.0.0.0"
+        server_port=int(
+            os.environ.get(
+                "PORT",
+                7860
+            )
+        )
+
     )
